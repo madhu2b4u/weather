@@ -3,8 +3,8 @@ package com.demo.weather
 import com.demo.core.di.Result
 import com.demo.core.weather.model.Condition
 import com.demo.core.weather.model.Current
-import com.demo.core.weather.model.WeatherInfo
 import com.demo.core.weather.model.Location
+import com.demo.core.weather.model.WeatherInfo
 import com.demo.weather.data.repository.WeatherInfoRepositoryImpl
 import com.demo.weather.data.source.WeatherInfoLocalDataSource
 import com.demo.weather.data.source.WeatherInfoRemoteDataSource
@@ -65,7 +65,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Success)
         assertEquals(mockWeatherInfo, (flowResults[1] as Result.Success).data)
-        
+
         coVerify(exactly = 1) {
             remoteDataSource.getWeatherInfo(city)
             localDataSource.saveWeatherInfo(mockWeatherInfo)
@@ -85,7 +85,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Success)
         assertEquals(mockWeatherInfo, (flowResults[1] as Result.Success).data)
-        
+
         coVerify(exactly = 1) { localDataSource.getWeatherInfo() }
         coVerify(exactly = 0) { remoteDataSource.getWeatherInfo(any()) }
     }
@@ -105,7 +105,7 @@ class WeatherInfoRepositoryImplTest {
         val emptyResult = flowResults[1] as Result.Empty
         assertEquals("No Weather Data", emptyResult.title)
         assertEquals("Please search for a city to see weather information", emptyResult.message)
-        
+
         coVerify(exactly = 1) { localDataSource.getWeatherInfo() }
         coVerify(exactly = 0) { remoteDataSource.getWeatherInfo(any()) }
     }
@@ -125,7 +125,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Error)
         assertEquals(errorMessage, (flowResults[1] as Result.Error).message)
-        
+
         coVerify(exactly = 1) { remoteDataSource.getWeatherInfo(city) }
         coVerify(exactly = 0) { localDataSource.saveWeatherInfo(any()) }
     }
@@ -144,7 +144,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Error)
         assertEquals(errorMessage, (flowResults[1] as Result.Error).message)
-        
+
         coVerify(exactly = 1) { localDataSource.getWeatherInfo() }
         coVerify(exactly = 0) { remoteDataSource.getWeatherInfo(any()) }
     }
@@ -165,7 +165,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Error)
         assertEquals(errorMessage, (flowResults[1] as Result.Error).message)
-        
+
         coVerify(exactly = 1) {
             remoteDataSource.getWeatherInfo(city)
             localDataSource.saveWeatherInfo(mockWeatherInfo)
@@ -186,7 +186,7 @@ class WeatherInfoRepositoryImplTest {
         assertTrue(flowResults[0] is Result.Loading)
         assertTrue(flowResults[1] is Result.Error)
         assertEquals("An unexpected error occurred", (flowResults[1] as Result.Error).message)
-        
+
         coVerify(exactly = 1) { remoteDataSource.getWeatherInfo(city) }
     }
 }

@@ -40,9 +40,12 @@ android {
     }
 
     packaging {
+
         resources {
             merges += "META-INF/gradle/incremental.annotation.processors"
             excludes += "META-INF/gradle/incremental.annotation.processors"
+            excludes += "META-INF/LICENSE.md"
+
         }
     }
 
@@ -58,6 +61,7 @@ dependencies {
         exclude(group = "com.intellij", module = "annotations")
     }
     kapt("androidx.room:room-compiler:2.5.0")
+    implementation(libs.androidx.datastore.preferences)
 
 
     // Compose BOM and other dependencies

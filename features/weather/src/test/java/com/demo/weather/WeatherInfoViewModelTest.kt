@@ -1,4 +1,5 @@
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
+import com.demo.core.DataStoreManager
 import com.demo.core.di.Result
 import com.demo.core.weather.WeatherScreenState
 import com.demo.core.weather.model.Condition
@@ -8,11 +9,14 @@ import com.demo.core.weather.model.WeatherInfo
 import com.demo.core.weather.usecase.WeatherInfoUseCase
 import com.demo.weather.presentation.viewmodel.WeatherInfoViewModel
 import io.mockk.coEvery
+import io.mockk.coVerify
 import io.mockk.mockk
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
@@ -22,8 +26,6 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import kotlinx.coroutines.test.advanceUntilIdle
-
 @OptIn(ExperimentalCoroutinesApi::class)
 class WeatherInfoViewModelTest {
 
@@ -32,6 +34,7 @@ class WeatherInfoViewModelTest {
 
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var weatherInfoUseCase: WeatherInfoUseCase
+    private lateinit var dataStore: DataStoreManager
     private lateinit var viewModel: WeatherInfoViewModel
 
     private val sampleWeatherInfo = WeatherInfo(
@@ -54,7 +57,11 @@ class WeatherInfoViewModelTest {
     @Before
     fun setup() {
         Dispatchers.setMain(testDispatcher)
-        weatherInfoUseCase = mockk(relaxed = true)  // Using relaxed mock to handle unexpected calls
+        weatherInfoUseCase = mockk()
+        dataStore = mockk()
+
+        // Default behavior for DataStore
+        coEvery { dataStore.getCity() } returns "Auckland"
     }
 
     @After
@@ -63,121 +70,134 @@ class WeatherInfoViewModelTest {
     }
 
     @Test
-    fun `test successful weather info fetch`() = runTest {
+    fun `when initialized with valid city in DataStore, fetches weather successfully`() = runTest {
         // Given
-        coEvery { weatherInfoUseCase.getWeatherInfo(any()) } returns flowOf(Result.Success(sampleWeatherInfo))
+        coEvery { dataStore.getCity() } returns "Auckland"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Auckland") } returns flowOf(
+            Result.Success(sampleWeatherInfo)
+        )
 
         // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
         advanceUntilIdle()
 
         // Then
         val currentState = viewModel.uiState.value
-        assertTrue("Expected Success state but was ${currentState::class.simpleName}", currentState is WeatherScreenState.Success)
-        currentState as WeatherScreenState.Success
-        assertEquals("Auckland", currentState.weatherInfo.location.name)
-        assertEquals(28.0, currentState.weatherInfo.current.temp_c, 0.001) // Using delta for floating-point comparison
-        assertEquals(25.0, currentState.weatherInfo.current.feelslike_c, 0.001)
-        assertEquals(5.0, currentState.weatherInfo.current.uv, 0.001)
+        assertTrue(currentState is WeatherScreenState.Success)
+        assertEquals("Auckland", (currentState as WeatherScreenState.Success).weatherInfo.location.name)
+        coVerify { dataStore.getCity() }
     }
 
     @Test
-    fun `test error state when api call fails`() = runTest {
+    fun `when DataStore returns null city, shows error state`() = runTest {
+        // Given
+        coEvery { dataStore.getCity() } returns null
+
+        // When
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
+        advanceUntilIdle()
+
+        // Then
+        val currentState = viewModel.uiState.value
+        assertTrue(currentState is WeatherScreenState.Error)
+        assertEquals("No city selected", (currentState as WeatherScreenState.Error).message)
+    }
+
+    @Test
+    fun `when weather fetch fails, shows error state`() = runTest {
         // Given
         val errorMessage = "Network error occurred"
-        coEvery { weatherInfoUseCase.getWeatherInfo(any()) } returns flowOf(
-            Result.Loading,
+        coEvery { dataStore.getCity() } returns "Auckland"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Auckland") } returns flowOf(
             Result.Error(errorMessage)
         )
 
         // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
         advanceUntilIdle()
 
         // Then
         val currentState = viewModel.uiState.value
-        assertTrue("Expected Error state but was ${currentState::class.simpleName}", currentState is WeatherScreenState.Error)
-        currentState as WeatherScreenState.Error
-        assertEquals(errorMessage, currentState.message)
+        assertTrue(currentState is WeatherScreenState.Error)
+        assertEquals(errorMessage, (currentState as WeatherScreenState.Error).message)
     }
 
-    /*@Test
-    fun `test loading state when fetching weather info`() = runTest {
+    @Test
+    fun `when fetchWeatherInfo called manually, updates state correctly`() = runTest {
         // Given
-        coEvery { weatherInfoUseCase.getWeatherInfo(any()) } returns flowOf(
-            Result.Loading,
-            Result.Success(sampleWeatherInfo) // Adding success state to complete the flow
+        coEvery { dataStore.getCity() } returns "Wellington"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Wellington") } returns flowOf(
+            Result.Success(sampleWeatherInfo.copy(
+                location = sampleWeatherInfo.location.copy(name = "Wellington")
+            ))
         )
 
         // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
+        viewModel.fetchWeatherInfo()
+        advanceUntilIdle()
 
         // Then
-        val initialState = viewModel.uiState.value
-        assertTrue(
-            "Expected Loading state but was ${initialState::class.simpleName}",
-            initialState is WeatherScreenState.Loading
-        )
-    }*/
+        val currentState = viewModel.uiState.value
+        assertTrue(currentState is WeatherScreenState.Success)
+        assertEquals("Wellington", (currentState as WeatherScreenState.Success).weatherInfo.location.name)
+    }
 
-    /*@Test
-    fun `test exception handling during weather fetch`() = runTest {
+    @Test
+    fun `when weather fetch throws exception, shows error state`() = runTest {
         // Given
-        coEvery { weatherInfoUseCase.getWeatherInfo(any()) } answers {
+        coEvery { dataStore.getCity() } returns "Auckland"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Auckland") } returns flow {
             throw RuntimeException("Network error")
         }
 
         // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
         advanceUntilIdle()
 
         // Then
         val currentState = viewModel.uiState.value
-        assertTrue("Expected Error state but was ${currentState::class.simpleName}", currentState is WeatherScreenState.Error)
-        currentState as WeatherScreenState.Error
-        assertEquals("Failed to fetch weather: Network error", currentState.message)
-    }*/
-
-    @Test
-    fun `test fetching weather info with specific city`() = runTest {
-        // Given
-        val city = "Wellington"
-        val wellingtonWeatherInfo = sampleWeatherInfo.copy(
-            location = sampleWeatherInfo.location.copy(name = city)
-        )
-        coEvery { weatherInfoUseCase.getWeatherInfo(eq(city)) } returns flowOf(
-            Result.Loading,
-            Result.Success(wellingtonWeatherInfo)
-        )
-
-        // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
-        viewModel.fetchWeatherInfo(city)
-        advanceUntilIdle()
-
-        // Then
-        val currentState = viewModel.uiState.value
-        assertTrue("Expected Success state but was ${currentState::class.simpleName}", currentState is WeatherScreenState.Success)
-        currentState as WeatherScreenState.Success
-        assertEquals(city, currentState.weatherInfo.location.name)
+        assertTrue(currentState is WeatherScreenState.Error)
+        assertEquals("Failed to fetch weather: Network error", (currentState as WeatherScreenState.Error).message)
     }
 
     @Test
-    fun `test initial empty state`() = runTest {
+    fun `verifies loading state when fetching weather info`() = runTest {
         // Given
-        coEvery { weatherInfoUseCase.getWeatherInfo(any()) } returns flowOf(
-            Result.Empty("No Data", "Please enter a city")
+        coEvery { dataStore.getCity() } returns "Auckland"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Auckland") } returns flowOf(
+            Result.Loading,
+            Result.Success(sampleWeatherInfo)
         )
 
         // When
-        viewModel = WeatherInfoViewModel(weatherInfoUseCase)
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
+
+        // Then - capture initial loading state
+        assertEquals(WeatherScreenState.Loading, viewModel.uiState.value)
+
+        // Then - advance to final state
+        advanceUntilIdle()
+        assertTrue(viewModel.uiState.value is WeatherScreenState.Success)
+    }
+
+    @Test
+    fun `when empty result returned, shows empty state`() = runTest {
+        // Given
+        coEvery { dataStore.getCity() } returns "Auckland"
+        coEvery { weatherInfoUseCase.getWeatherInfo("Auckland") } returns flowOf(
+            Result.Empty("No Data", "Please try again")
+        )
+
+        // When
+        viewModel = WeatherInfoViewModel(weatherInfoUseCase, dataStore)
         advanceUntilIdle()
 
         // Then
         val currentState = viewModel.uiState.value
-        assertTrue("Expected Empty state but was ${currentState::class.simpleName}", currentState is WeatherScreenState.Empty)
+        assertTrue(currentState is WeatherScreenState.Empty)
         currentState as WeatherScreenState.Empty
         assertEquals("No Data", currentState.title)
-        assertEquals("Please enter a city", currentState.message)
+        assertEquals("Please try again", currentState.message)
     }
 }

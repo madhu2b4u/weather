@@ -46,7 +46,8 @@ android {
     }
     packaging {
         resources {
-            merges += "META-INF/gradle/incremental.annotation.processors"
+            excludes += "META-INF/LICENSE.md"
+            pickFirsts += "META-INF/LICENSE-notice.md"
             excludes += "META-INF/gradle/incremental.annotation.processors"
         }
     }

@@ -70,7 +70,11 @@ class SearchRemoteDataSourceImplTest {
         // Arrange
         val searchJson = loadJson("search_api.json")
         val searchResponse = gson.fromJson(searchJson, mutableListOf<Location>()::class.java)
-        coEvery { service.searchLocation("Hyderabad") } returns CompletableDeferred(createResponse(searchResponse))
+        coEvery { service.searchLocation("Hyderabad") } returns CompletableDeferred(
+            createResponse(
+                searchResponse
+            )
+        )
 
         // Act
         val result = searchDataSource.getSearchResults("Hyderabad")

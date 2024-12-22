@@ -30,10 +30,12 @@ class WeatherInfoRepositoryImpl @Inject constructor(
                     if (localData != null) {
                         emit(Result.Success(localData))
                     } else {
-                        emit(Result.Empty(
-                            title = "No Weather Data",
-                            message = "Please search for a city to see weather information"
-                        ))
+                        emit(
+                            Result.Empty(
+                                title = "No Weather Data",
+                                message = "Please search for a city to see weather information"
+                            )
+                        )
                     }
                 }
             }

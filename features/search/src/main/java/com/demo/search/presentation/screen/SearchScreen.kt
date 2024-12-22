@@ -73,6 +73,7 @@ fun SearchScreen(onNavigateToTheWeather: () -> Unit) {
             is WeatherScreenState.Loading -> {
                 CircularProgressIndicator(modifier = Modifier.padding(16.dp))
             }
+
             is WeatherScreenState.Error -> {
                 Text(
                     text = (weatherState as WeatherScreenState.Error).message,
@@ -81,10 +82,12 @@ fun SearchScreen(onNavigateToTheWeather: () -> Unit) {
                     modifier = Modifier.padding(16.dp)
                 )
             }
+
             is WeatherScreenState.Success -> {
                 val weatherInfo = (weatherState as WeatherScreenState.Success).weatherInfo
                 WeatherCard(weatherInfo)
             }
+
             is WeatherScreenState.Empty -> {
 
             }
@@ -168,7 +171,7 @@ private fun WeatherCard(weather: WeatherInfo) {
             }
 
             AsyncImage(
-                model = "https:"+weather.current.condition.icon,
+                model = "https:" + weather.current.condition.icon,
                 contentDescription = "Weather Icon",
                 modifier = Modifier.size(80.dp),
                 contentScale = ContentScale.Fit

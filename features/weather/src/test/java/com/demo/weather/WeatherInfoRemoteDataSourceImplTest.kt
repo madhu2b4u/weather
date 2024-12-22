@@ -3,8 +3,8 @@ package com.demo.weather
 import com.demo.core.exception.NoDataException
 import com.demo.core.weather.model.Condition
 import com.demo.core.weather.model.Current
-import com.demo.core.weather.model.WeatherInfo
 import com.demo.core.weather.model.Location
+import com.demo.core.weather.model.WeatherInfo
 import com.demo.weather.data.service.WeatherApiService
 import com.demo.weather.data.source.WeatherInfoRemoteDataSourceImpl
 import io.mockk.clearAllMocks

@@ -78,24 +78,24 @@ class SearchRepositoryTest {
         coVerify(exactly = 1) { remoteDataSource.getSearchResults(query) }
     }
 
-   /* @Test
-    fun `getSearchResults emits empty for empty response`() = runTest {
-        // Arrange
-        val query = "NonExistentLocation"
-        coEvery { remoteDataSource.getSearchResults(query) } returns mutableListOf()
+    /* @Test
+     fun `getSearchResults emits empty for empty response`() = runTest {
+         // Arrange
+         val query = "NonExistentLocation"
+         coEvery { remoteDataSource.getSearchResults(query) } returns mutableListOf()
 
-        // Act
-        val flowResults = searchRepository.getSearchResults(query).toList()
+         // Act
+         val flowResults = searchRepository.getSearchResults(query).toList()
 
-        // Assert
-        assertEquals(2, flowResults.size)
-        assertTrue(flowResults[0] is Result.Loading)
-        assertTrue(flowResults[1] is Result.Empty)
-        val emptyResult = flowResults[1] as Result.Empty
-        assertEquals("No Results", emptyResult.title)
-        assertEquals("No locations found for your search", emptyResult.message)
-        coVerify(exactly = 1) { remoteDataSource.getSearchResults(query) }
-    }*/
+         // Assert
+         assertEquals(2, flowResults.size)
+         assertTrue(flowResults[0] is Result.Loading)
+         assertTrue(flowResults[1] is Result.Empty)
+         val emptyResult = flowResults[1] as Result.Empty
+         assertEquals("No Results", emptyResult.title)
+         assertEquals("No locations found for your search", emptyResult.message)
+         coVerify(exactly = 1) { remoteDataSource.getSearchResults(query) }
+     }*/
 
     @Test
     fun `getSearchResults emits error on network failure`() = runTest {
