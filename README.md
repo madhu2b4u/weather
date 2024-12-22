@@ -118,5 +118,3 @@ You can run unit and UI tests by using the following commands:
   ```bash
   ./gradlew connectedAndroidTest
  ```
-
-
