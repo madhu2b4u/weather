@@ -47,7 +47,7 @@ The goal of this app is to:
 - **WeatherAPI.com** for fetching weather data
 - **Hilt** for Dependency Injection
 - **Retrofit** for networking
-- **Room (optional)** for database storage (if applicable)
+- **Room** for database storage
 
 ---
 
